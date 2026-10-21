@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "独乐 SOLO ARCADE · 单机游戏站",
+  "short_name": "独乐",
+  "description": "一个人，也能玩得很尽兴。十款经典与原创游戏，安装后离线畅玩。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#111715",
+  "theme_color": "#111715",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "./assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "玩一局 2048", "url": "./#play=twenty48", "icons": [{ "src": "./assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "星轨穿梭", "url": "./#play=orbit" }
+  ]
+}

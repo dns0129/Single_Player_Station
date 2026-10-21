@@ -1,0 +1,13 @@
+{
+  "name": "solo-arcade",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "独乐：可安装、可离线的十款单机小游戏",
+  "scripts": {
+    "dev": "node scripts/server.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs"
+  }
+}

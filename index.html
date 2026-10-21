@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111715">
+  <meta name="description" content="独乐 SOLO ARCADE：10 款经典与原创单机小游戏。免费即点即玩，支持手机、iPad 和电脑安装，下载后离线畅玩。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>独乐 SOLO ARCADE · 一个人，也能玩得很尽兴</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
+  <link rel="apple-touch-icon" href="./assets/icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a href="#library" class="skip-link">跳到游戏库</a>
+  <aside class="sidebar" aria-label="主导航">
+    <a class="brand" href="#home" aria-label="独乐首页"><span class="brand-mark" data-icon="gamepad"></span><span><strong>独乐<span class="brand-dot">.</span></strong><small>SOLO ARCADE</small></span></a>
+    <div class="nav-caption">你的快乐基地</div>
+    <nav class="main-nav">
+      <button class="nav-item active" data-view="all"><span data-icon="grid"></span>发现游戏<span class="nav-count">10</span></button>
+      <button class="nav-item" data-view="favorites"><span data-icon="heart"></span>我的收藏<span id="favorite-count" class="nav-count">0</span></button>
+      <button class="nav-item" data-view="recent"><span data-icon="clock"></span>最近玩过</button>
+    </nav>
+    <div class="nav-caption second-caption">随时来一局</div>
+    <nav class="category-nav" aria-label="游戏分类">
+      <button class="nav-item" data-category="puzzle"><i class="category-dot yellow"></i>益智解谜</button>
+      <button class="nav-item" data-category="arcade"><i class="category-dot purple"></i>街机动作</button>
+      <button class="nav-item" data-category="strategy"><i class="category-dot blue"></i>棋盘策略</button>
+    </nav>
+    <div class="sidebar-bottom"><div class="little-orbit"><span>✳</span><i></i></div><h3>快乐，不用联网。</h3><p>把一整个游戏厅<br>装进口袋。</p><button class="sidebar-install" data-install>安装独乐 <span data-icon="arrow-up-right"></span></button><div class="sidebar-foot"><span class="online-dot"></span> 免费 · 无广告 · 无需登录</div></div>
+  </aside>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="mobile-brand" href="#home"><span data-icon="gamepad"></span>独乐.</a>
+      <div class="breadcrumb">游戏大厅 <span>/</span> <strong id="breadcrumb-current">发现游戏</strong></div>
+      <div class="topbar-actions"><span class="offline-status" id="offline-status"><i></i><span>即点即玩</span></span><button class="install-top" data-install><span data-icon="download"></span><span>下载客户端</span></button><button class="avatar" id="profile-button" aria-label="查看我的游戏记录">玩</button></div>
+    </header>
+    <main id="home">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy"><div class="eyebrow"><i></i> PRESS PLAY. FIND YOUR JOY.</div><h1 id="hero-title">一个人，也能<br>玩得<span class="hero-highlight">很尽兴<svg viewBox="0 0 260 18" aria-hidden="true"><path d="M3 13 Q113 0 256 7"/></svg></span>。</h1><p>经典的、新鲜的、让人停不下来的。<br>给自己一点时间，找回纯粹好玩的感觉。</p><div class="hero-actions"><button class="primary-button" id="surprise-button"><span data-icon="shuffle"></span>随便玩一个<span data-icon="arrow-right"></span></button><a class="text-link" href="#library">探索游戏库 <span data-icon="arrow-down"></span></a></div><div class="hero-features"><span><span data-icon="wifi-off"></span>支持离线</span><span><span data-icon="devices"></span>全设备畅玩</span><span><span data-icon="shield"></span>安心无广告</span></div></div>
+        <div class="hero-art"><img src="./assets/hero.svg" alt="漂浮在薄荷绿色星环上的复古游戏机、数字方块与像素星星" width="640" height="460"><span class="floating-note">JUST ONE MORE GAME <span>↗</span></span><div class="hero-art-caption"><span class="sparkle">✳</span> 小小的游戏，大大的快乐。 <span class="art-edition">VOL. 001</span></div></div>
+      </section>
+      <section class="quick-strip" aria-label="精选推荐"><span class="strip-label"><span data-icon="sparkles"></span> 今天玩什么</span><p>从一局 <strong>2048</strong> 开始，把烦恼轻轻合并掉。</p><button data-play="twenty48">开始这一局 <span data-icon="arrow-right"></span></button><span class="strip-corner">02 / 04 / 08 / ∞</span></section>
+      <section class="library" id="library" aria-labelledby="library-title">
+        <div class="section-top"><div><div class="section-kicker">A LITTLE ESCAPE, ANYTIME.</div><h2 id="library-title">发现你的下一局<span class="game-total">10</span></h2><p class="section-description" id="section-description">十种快乐，随时开场。你喜欢的经典，都在这里。</p></div><label class="search-box"><span data-icon="search"></span><input type="search" id="game-search" placeholder="搜索游戏，寻找快乐…" aria-label="搜索游戏"><kbd>/</kbd></label></div>
+        <div class="library-toolbar"><div class="filter-tabs" role="group" aria-label="按分类筛选"><button class="filter-tab active" data-filter="all">全部游戏 <span>10</span></button><button class="filter-tab" data-filter="puzzle">益智解谜</button><button class="filter-tab" data-filter="arcade">街机动作</button><button class="filter-tab" data-filter="strategy">棋盘策略</button></div><label class="sort-control"><span data-icon="sort"></span><select id="game-sort" aria-label="游戏排序"><option value="recommended">精选排序</option><option value="name">名称排序</option><option value="recent">最近游玩</option></select></label></div>
+        <div class="game-grid" id="game-grid" aria-live="polite"></div>
+        <div class="empty-state" id="empty-state" hidden><span data-icon="gamepad"></span><h3>这一格，等你来填满。</h3><p id="empty-description">试试其他关键词，下一款快乐就在这里。</p><button class="secondary-button" id="reset-filters">看看全部游戏</button></div>
+      </section>
+      <section class="install-banner"><div class="banner-icon" data-icon="devices"></div><div><div class="section-kicker">TAKE YOUR ARCADE WITH YOU</div><h2>快乐随身，断网也能继续。</h2><p>手机、iPad、电脑，安装一次，随时来一局。</p></div><button class="secondary-button" data-install>装进我的设备 <span data-icon="arrow-up-right"></span></button><span class="banner-decoration" aria-hidden="true">✳</span></section>
+      <footer><a class="footer-brand" href="#home">独乐<span>.</span> <small>SOLO ARCADE</small></a><p>为那些只想好好玩一会儿的时刻而造。</p><button id="about-button">关于独乐 <span data-icon="arrow-up-right"></span></button><span class="footer-copyright">© 2026 独乐 · 纯粹好玩</span></footer>
+    </main>
+  </div>
+  <nav class="mobile-nav" aria-label="移动导航"><button class="active" data-view="all"><span data-icon="grid"></span>发现</button><button data-view="favorites"><span data-icon="heart"></span>收藏</button><button data-view="recent"><span data-icon="clock"></span>最近</button><button data-install><span data-icon="download"></span>安装</button></nav>
+  <dialog id="game-dialog" class="game-dialog" aria-labelledby="game-title"><div class="game-dialog-header"><div class="game-dialog-title"><span id="game-title-icon" data-icon="gamepad"></span><div><span class="section-kicker" id="game-category">益智解谜</span><h2 id="game-title">2048</h2></div></div><div class="game-window-actions"><button class="icon-button" id="sound-button" aria-label="开启音效" title="开启音效"><span data-icon="volume-x"></span></button><button class="icon-button" id="pause-button" aria-label="暂停游戏" title="暂停游戏"><span data-icon="pause"></span></button><button class="icon-button" id="close-game" aria-label="关闭游戏"><span data-icon="close"></span></button></div></div><div class="game-scorebar"><div><small id="score-label">本局得分</small><strong id="current-score">0</strong></div><div><small>个人最佳</small><strong id="best-score">0</strong></div><button class="secondary-button" id="restart-game"><span data-icon="restart"></span>重新开始</button></div><div class="game-body"><div id="game-stage" class="game-stage" tabindex="0" aria-label="游戏操作区域"></div><div id="game-controls" class="game-controls"></div><div id="game-status" class="game-status" role="status" aria-live="polite"></div><div class="game-help"><span data-icon="info"></span><p id="game-instructions"></p></div></div><div class="game-overlay" id="game-overlay" hidden><div class="result-symbol" id="result-symbol">Ⅱ</div><span class="section-kicker">SOLO TIME</span><h2 id="result-title">休息一下</h2><p id="result-description">准备好了，再接着玩。</p><button class="primary-button" id="overlay-action">继续游戏 <span data-icon="play"></span></button><button class="text-link" id="overlay-exit">回到游戏大厅</button></div></dialog>
+  <dialog id="info-dialog" class="info-dialog" aria-labelledby="info-title"><button class="icon-button info-close" id="close-info" aria-label="关闭"><span data-icon="close"></span></button><div id="info-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript><div class="noscript">请开启 JavaScript 来游玩这 10 款小游戏。独乐不需要注册账号。</div></noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
