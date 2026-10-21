@@ -54,6 +54,8 @@ $('#profile-button').addEventListener('click',openRecords);$('#about-button').ad
 function updateOffline(){const state=$('#offline-status');state.querySelector('span').textContent=offlineReady?(navigator.onLine?'离线已就绪':'正在离线游玩'):(navigator.onLine?'即点即玩':'尚未完成离线缓存');}
 window.addEventListener('online',updateOffline);window.addEventListener('offline',updateOffline);
 if('serviceWorker'in navigator&&!globalThis.__SOLO_BUNDLE__&&/^https?:$/.test(location.protocol)){
+  const hadController=Boolean(navigator.serviceWorker.controller);let reloadingForUpdate=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadController&&!reloadingForUpdate){reloadingForUpdate=true;location.reload();}});
   navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='SOLO_OFFLINE_READY'){offlineReady=true;updateOffline();}});
   navigator.serviceWorker.register('./sw.js').then(()=>navigator.serviceWorker.ready).then(reg=>{reg.active?.postMessage({type:'SOLO_CHECK_CACHE'});}).catch(()=>{offlineReady=false;updateOffline();});
 }else if(globalThis.__SOLO_BUNDLE__){offlineReady=true;$('#offline-status span').textContent='电脑离线版';}

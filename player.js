@@ -35,6 +35,8 @@ playerQuery('#fullscreen-button').addEventListener('click',async()=>{try{if(docu
 document.addEventListener('keydown',e=>{if(e.defaultPrevented||e.target instanceof HTMLInputElement)return;if(['p','P','Escape'].includes(e.key)){e.preventDefault();pausePlayer();}});document.addEventListener('visibilitychange',()=>{if(document.hidden&&!playerPaused&&!playerFinished)pausePlayer();});window.addEventListener('pagehide',()=>{savePlayerRecord();playerSession?.destroy();});window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
 renderPlayerFavorite();renderPlayerSound();startPlayer();if(!storageAvailable)playerToast('本设备未允许保存记录，游戏仍可继续。');
 if('serviceWorker'in navigator&&!globalThis.__SOLO_BUNDLE__&&/^https?:$/.test(location.protocol)){
+  const hadController=Boolean(navigator.serviceWorker.controller);let reloadingForUpdate=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadController&&!reloadingForUpdate){reloadingForUpdate=true;location.reload();}});
   navigator.serviceWorker.addEventListener('message',e=>{if(e.data?.type==='SOLO_OFFLINE_READY')playerQuery('#player-online').innerHTML='<i></i>全部游戏 · 离线已就绪';});
   navigator.serviceWorker.register(new URL('../../sw.js',location.href)).then(()=>navigator.serviceWorker.ready).then(reg=>reg.active?.postMessage({type:'SOLO_CHECK_CACHE'})).catch(()=>{});
 }else if(globalThis.__SOLO_BUNDLE__)playerQuery('#player-online').innerHTML='<i></i>独立页面 · 离线版';

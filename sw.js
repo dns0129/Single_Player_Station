@@ -1,4 +1,4 @@
-const CACHE='solo-arcade-48dfd6a6c939';
+const CACHE='solo-arcade-ef8a151bb7af';
 const BASE=new URL('./',self.location.href);
 const GAME_IDS=['twenty48','snake','blocks','mines','sudoku','gomoku','breakout','memory','slide','orbit'];
 const ASSETS=['./','./index.html','./styles.css','./core.js','./games.js','./app.js','./ui.js','./state.js','./breakout-core.js','./breakout.js','./player.js','./manifest.webmanifest','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./assets/hero.svg',...GAME_IDS.map(id=>`./assets/${id}.svg`),...GAME_IDS.map(id=>`./play/${id}/index.html`)];
