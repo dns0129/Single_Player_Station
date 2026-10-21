@@ -1,0 +1,70 @@
+import { BreakoutEngine, BREAKOUT_LEVELS, BREAKOUT_WORLDS, BREAKOUT_POWERUPS, readBreakoutProgress, completeBreakoutLevel } from './breakout-core.js';
+
+export function breakout(ctx,r){
+  ctx.stage.classList.add('breakout-stage');
+  let progress=readBreakoutProgress(ctx.load()),engine=new BreakoutEngine(progress.level),keys=new Set(),particles=[],rings=[],dropButtons=new Map(),lastMode='',lastHud='',lastEffects='',lastMap=-1;
+  const frame=document.createElement('div');frame.className='breakout-board';
+  frame.innerHTML='<canvas width="1200" height="1400" role="img" aria-label="打砖块关卡画面，左右键或拖动控制挡板"></canvas><div class="breakout-drops" aria-label="点击拾取掉落道具"></div><div class="breakout-message" hidden></div>';
+  ctx.stage.append(frame);const canvas=frame.querySelector('canvas'),g=canvas.getContext('2d');g.scale(2,2);
+  const dropsLayer=frame.querySelector('.breakout-drops'),message=frame.querySelector('.breakout-message');
+  const top=document.createElement('div');top.className='breakout-top';top.innerHTML='<div><span class="section-kicker">BREAKOUT ODYSSEY</span><strong id="breakout-level-name"></strong></div><button class="control-button" id="breakout-map-button">▦ 100 关地图</button>';
+  ctx.stage.prepend(top);
+  const hud=document.createElement('div');hud.className='breakout-hud';ctx.stage.insertBefore(hud,frame);
+  const effects=document.createElement('div');effects.className='breakout-effects';effects.setAttribute('aria-label','生效中的道具');ctx.stage.append(effects);
+  const actions=document.createElement('div');actions.className='breakout-action-row';ctx.controls.append(actions);
+  function addAction(label,fn,attrs={}){const b=document.createElement('button');b.className='control-button';b.type='button';b.textContent=label;for(const[k,v]of Object.entries(attrs))b.setAttribute(k,v);r.listen(b,'click',fn);actions.append(b);return b;}
+  const launch=addAction('● 发球',()=>engine.launch(),{id:'breakout-launch'});
+  const left=addAction('←',()=>engine.setPaddle(engine.paddle.x-32),{'aria-label':'向左移动挡板'});
+  const right=addAction('→',()=>engine.setPaddle(engine.paddle.x+32),{'aria-label':'向右移动挡板'});
+  const detonate=addAction('✹ 引爆（0）',()=>engine.detonate(),{id:'breakout-detonate','aria-label':'引爆球，消耗一次爆炸能量，快捷键 E'});
+  for(const[b,d]of[[left,'left'],[right,'right']]){r.listen(b,'pointerdown',e=>{b.setPointerCapture(e.pointerId);keys.add(d);});for(const event of['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>keys.delete(d));}
+  const map=document.createElement('div');map.className='breakout-level-map';map.hidden=true;map.innerHTML='<div class="level-map-header"><div><span class="section-kicker">CHOOSE YOUR NEXT ADVENTURE</span><h3>100 关，随你挑。</h3><p>自由选关 · 进度自动保存在这台设备</p></div><button class="control-button" id="close-level-map" aria-label="关闭关卡地图">×</button></div><div class="level-map-chapters"></div>';
+  ctx.controls.append(map);
+  function drawMap(){if(lastMap===progress.completed.length&&map.querySelector('[data-breakout-level]')){map.querySelectorAll('[data-breakout-level]').forEach(b=>b.classList.toggle('current',Number(b.dataset.breakoutLevel)===engine.level.number));return;}lastMap=progress.completed.length;map.querySelector('.level-map-chapters').innerHTML=BREAKOUT_WORLDS.map((world,w)=>`<section class="map-chapter"><h4><i style="background:${world.color}"></i>${String(w+1).padStart(2,'0')} · ${world.name}</h4><div class="level-grid">${BREAKOUT_LEVELS.slice(w*10,w*10+10).map(level=>`<button type="button" data-breakout-level="${level.number}" class="level-button ${progress.completed.includes(level.number)?'completed':''} ${level.number===engine.level.number?'current':''}" aria-label="选择第 ${level.number} 关，${level.formation}${progress.completed.includes(level.number)?'，已通关':''}"><strong>${String(level.number).padStart(2,'0')}</strong><small>${progress.stars[level.number]?'★'.repeat(progress.stars[level.number]):level.formation}</small></button>`).join('')}</div></section>`).join('');}
+  function setMap(open){map.hidden=!open;keys.clear();if(open){drawMap();map.scrollIntoView({behavior:'smooth',block:'nearest'});map.querySelector('[data-breakout-level].current')?.focus({preventScroll:true});}else{ctx.stage.focus({preventScroll:true});ctx.stage.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}}
+  r.listen(top.querySelector('button'),'click',()=>setMap(map.hidden));r.listen(map.querySelector('#close-level-map'),'click',()=>setMap(false));r.listen(map,'click',e=>{const b=e.target.closest('[data-breakout-level]');if(b){reset(Number(b.dataset.breakoutLevel));setMap(false);}});
+  const hint=document.createElement('p');hint.className='breakout-collect-hint';hint.textContent='道具下落时，直接点击拾取，或用挡板接住。按空格发球，按 E 引爆。';ctx.controls.append(hint);
+  function save(){ctx.save(progress);}
+  function reset(number){progress.level=number;save();engine.reset(number);keys.clear();particles=[];rings=[];for(const b of dropButtons.values())b.remove();dropButtons.clear();message.hidden=true;lastMode='';lastHud='';lastEffects='';ctx.score(0);ctx.status(`第 ${number} 关 · ${engine.level.chapter.tip}`);top.querySelector('strong').textContent=`${String(number).padStart(2,'0')} / 100 · ${engine.level.name}`;renderHud();draw(0);}
+  function pointer(e){if(e.target.closest('button'))return;const rect=canvas.getBoundingClientRect();if(e.type==='pointerdown')canvas.setPointerCapture(e.pointerId);if(e.pointerType==='touch'&&e.type==='pointermove'&&!e.buttons)return;engine.setPaddle((e.clientX-rect.left)/rect.width*600);}
+  r.listen(canvas,'pointerdown',pointer);r.listen(canvas,'pointermove',pointer);r.listen(canvas,'pointerup',()=>{if(engine.mode==='ready')engine.launch();});
+  r.keys((e,dir)=>{if(!map.hidden){if(e.key==='Escape'){e.preventDefault();setMap(false);}return;}if(dir==='left'||dir==='right')keys.add(dir);if(e.key===' '&&!e.repeat)engine.launch();if((e.key==='e'||e.key==='E')&&!e.repeat)engine.detonate();});
+  // Releases must also run while the parent has paused the game.
+  const release=e=>{if(['ArrowLeft','a','A'].includes(e.key))keys.delete('left');if(['ArrowRight','d','D'].includes(e.key))keys.delete('right');};
+  r.listen(document,'keyup',release);r.listen(window,'blur',()=>keys.clear());
+  function burst(x,y,color,count=10){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;for(let i=0;i<count;i++){const angle=Math.random()*Math.PI*2,speed=30+Math.random()*100;particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:.3+Math.random()*.3,color});}if(particles.length>240)particles.splice(0,particles.length-240);}
+  function handleEvents(){for(const event of engine.takeEvents()){
+    if(event.type==='score')ctx.score(event.score);
+    if(event.type==='hit'){burst(event.x,event.y,event.color);ctx.beep(430);}
+    if(event.type==='bounce')ctx.beep(250);
+    if(event.type==='explode'){rings.push({x:event.x,y:event.y,radius:event.radius,life:.4});burst(event.x,event.y,'#f4ba83',16);ctx.beep(170);}
+    if(event.type==='collect'){ctx.status(`已拾取「${event.name}」· ${BREAKOUT_POWERUPS[event.kind].description}`);ctx.beep(730);burst(event.x,event.y,BREAKOUT_POWERUPS[event.kind].color,16);}
+    if(event.type==='life')ctx.status(`还有 ${event.lives} 次机会，点击发球继续本关。`);
+    if(event.type==='shield'){burst(event.x,event.y,'#9ebee9',18);ctx.status('底部护盾救回一球！');}
+    if(event.type==='win'){progress=completeBreakoutLevel(progress,event.number,event.score,event.lives);save();lastMap=-1;ctx.achievement?.(event.score);ctx.beep(850);ctx.status(`第 ${event.number} 关通关 · 已完成 ${progress.completed.length} / 100 关`);}
+    if(event.type==='gameover')ctx.status('机会用完了，已保留关卡记录，可以重试这一关。');
+  }}
+  function renderHud(){const text=`${engine.lives}:${engine.shields}:${engine.bricks.filter(b=>b.hp>0).length}:${progress.completed.length}`;if(text!==lastHud){lastHud=text;hud.innerHTML=`<span class="breakout-lives" aria-label="剩余 ${engine.lives} 次机会">${'♥'.repeat(engine.lives)}${'♡'.repeat(Math.max(0,3-engine.lives))}</span><span>护盾 <strong>${engine.shields}</strong></span><span>剩余 <strong>${engine.bricks.filter(b=>b.hp>0).length}</strong> 块</span><span>通关 <strong>${progress.completed.length}</strong>/100</span>`;}
+    launch.hidden=engine.mode!=='ready';detonate.disabled=engine.charges<=0||engine.mode!=='running';detonate.textContent=`✹ 引爆（${engine.charges}）`;
+    const active=Object.entries(engine.effects).map(([key,value])=>`${key}:${Math.ceil(value)}`).join(',');if(active!==lastEffects){lastEffects=active;effects.innerHTML=Object.entries(engine.effects).map(([key,value])=>`<span style="--power-color:${BREAKOUT_POWERUPS[key].color}"><b>${BREAKOUT_POWERUPS[key].symbol}</b>${BREAKOUT_POWERUPS[key].name}<small>${Math.ceil(value)}s</small></span>`).join('');}
+    if(lastMode!==engine.mode){lastMode=engine.mode;message.hidden=engine.mode!=='won'&&engine.mode!=='lost';if(!message.hidden){const win=engine.mode==='won',final=win&&engine.level.number===100;message.innerHTML=`<div class="breakout-result-star">${win?'★'.repeat(progress.stars[engine.level.number]||1):'↗'}</div><div class="section-kicker">${win?'LEVEL COMPLETE':'ONE MORE TRY'}</div><h3>${final?'星环终点，漂亮抵达！':win?`第 ${engine.level.number} 关，拿下！`:'再来一次，打得更漂亮。'}</h3><p>本关 ${engine.score} 分${win?` · 最高 ${progress.best[engine.level.number]} 分`:''}<br>已完成 ${progress.completed.length} / 100 关</p>${win&&!final?'<button class="primary-button" data-next-level>下一关 →</button>':'<button class="primary-button" data-retry-level>重试本关 ↻</button>'}<button class="text-link" data-open-map>选择其他关卡</button>`;}}
+  }
+  r.listen(message,'click',e=>{if(e.target.closest('[data-next-level]'))reset(engine.level.number+1);if(e.target.closest('[data-retry-level]'))reset(engine.level.number);if(e.target.closest('[data-open-map]'))setMap(true);});
+  function renderDrops(){const ids=new Set(engine.drops.map(d=>d.id));for(const[id,b]of dropButtons)if(!ids.has(id)){b.remove();dropButtons.delete(id);}for(const drop of engine.drops){let b=dropButtons.get(drop.id);if(!b){const power=BREAKOUT_POWERUPS[drop.kind];b=document.createElement('button');b.type='button';b.className='breakout-powerup';b.dataset.powerup=drop.kind;b.dataset.dropId=drop.id;b.style.setProperty('--power-color',power.color);b.innerHTML=`<strong>${power.symbol}</strong><small>${power.name}</small>`;b.setAttribute('aria-label',`拾取${power.name}：${power.description}`);r.listen(b,'pointerdown',e=>e.stopPropagation());r.listen(b,'click',e=>{e.stopPropagation();if(map.hidden)engine.collect(drop.id);handleEvents();renderHud();renderDrops();});dropsLayer.append(b);dropButtons.set(drop.id,b);}b.style.left=`${drop.x/6}%`;b.style.top=`${drop.y/7}%`;}}
+  function round(x,y,w,h,radius,color){g.fillStyle=color;g.beginPath();g.roundRect(x,y,w,h,radius);g.fill();}
+  function draw(dt){
+    const chapter=engine.level.chapter;g.fillStyle=chapter.background;g.fillRect(0,0,600,700);
+    g.fillStyle='#ffffff08';for(let y=55;y<700;y+=24)for(let x=18;x<600;x+=24){g.beginPath();g.arc(x,y,.7,0,Math.PI*2);g.fill();}
+    g.fillStyle=chapter.color;g.globalAlpha=.7;g.font='11px ui-monospace,monospace';g.textAlign='left';g.fillText(`CHAPTER ${String(engine.level.world).padStart(2,'0')} / ${chapter.name}`,20,28);g.textAlign='right';g.fillText(`LEVEL ${String(engine.level.number).padStart(3,'0')}`,580,28);g.globalAlpha=1;
+    for(const brick of engine.bricks){if(brick.hp<=0)continue;const color=brick.kind==='explosive'?'#dc967b':brick.maxHp===3?'#bba7d9':brick.maxHp===2?'#8db4c0':chapter.color;round(brick.x,brick.y+3,brick.w,brick.h,4,'#080f0d66');round(brick.x,brick.y,brick.w,brick.h,4,color);g.fillStyle='#ffffff28';g.fillRect(brick.x+4,brick.y+3,brick.w-8,2);if(brick.kind==='explosive'){g.fillStyle='#593d2d';g.textAlign='center';g.font='bold 17px system-ui';g.fillText('✹',brick.x+brick.w/2,brick.y+17);}else if(brick.maxHp>1){g.fillStyle='#24353988';for(let i=0;i<brick.hp;i++){g.beginPath();g.arc(brick.x+brick.w/2+(i-(brick.hp-1)/2)*7,brick.y+brick.h/2+1,1.8,0,Math.PI*2);g.fill();}}}
+    for(const ring of rings){g.strokeStyle=`rgba(247,183,120,${Math.max(0,ring.life/.4)})`;g.lineWidth=3;g.beginPath();g.arc(ring.x,ring.y,ring.radius*(1-ring.life/.4),0,Math.PI*2);g.stroke();}for(const p of particles){g.globalAlpha=Math.max(0,p.life/.6);g.fillStyle=p.color;g.fillRect(p.x,p.y,3,3);}g.globalAlpha=1;
+    if(engine.shields){g.strokeStyle='#9ebee9';g.lineWidth=3;g.setLineDash([12,8]);g.beginPath();g.moveTo(14,682);g.lineTo(586,682);g.stroke();g.setLineDash([]);}
+    round(engine.paddle.x-engine.paddle.width/2,engine.paddle.y,engine.paddle.width,13,7,engine.effects.wide?'#ddf7b0':chapter.color);round(engine.paddle.x-engine.paddle.width/2+7,engine.paddle.y+2,engine.paddle.width-14,3,2,'#ffffff55');
+    for(const ball of engine.balls){const color=engine.effects.blast?'#ffc18c':engine.effects.pierce?'#d5b8ff':'#f5e5ba';g.shadowColor=color;g.shadowBlur=engine.effects.blast?18:8;g.fillStyle=color;g.beginPath();g.arc(ball.x,ball.y,ball.r,0,Math.PI*2);g.fill();g.shadowBlur=0;if(engine.effects.blast){g.strokeStyle='#ffcc9655';g.beginPath();g.arc(ball.x,ball.y,13+Math.sin(engine.time*9)*2,0,Math.PI*2);g.stroke();}}
+    if(engine.mode==='ready'){g.fillStyle='#101a15ce';g.fillRect(95,463,410,75);g.textAlign='center';g.fillStyle=chapter.color;g.font='600 20px system-ui';g.fillText('准备好了，就发球。',300,493);g.fillStyle='#9fb293';g.font='12px system-ui';g.fillText('点击画面 / 按空格 · 拖动或左右键移动',300,519);}
+    if(!map.hidden){g.fillStyle='#0b150c99';g.fillRect(0,0,600,700);g.textAlign='center';g.fillStyle='#c4ed9c';g.font='18px system-ui';g.fillText('正在选关 · 游戏已暂停',300,525);}
+    for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;}particles=particles.filter(p=>p.life>0);for(const ring of rings)ring.life-=dt;rings=rings.filter(ring=>ring.life>0);
+  }
+  r.loop(dt=>{if(map.hidden){if(keys.has('left'))engine.setPaddle(engine.paddle.x-390*dt);if(keys.has('right'))engine.setPaddle(engine.paddle.x+390*dt);engine.step(dt);}handleEvents();renderHud();renderDrops();draw(dt);});reset(progress.level);
+  return {restart(){reset(engine.level.number);}};
+}

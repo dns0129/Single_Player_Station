@@ -19,4 +19,4 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Ensure generated downloads and offline assets are current
-        run: git diff --exit-code -- assets downloads offline.html sw.js
+        run: git diff --exit-code -- assets downloads play offline.html sw.js

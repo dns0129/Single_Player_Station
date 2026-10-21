@@ -1,0 +1,6 @@
+import { GAMES } from './core.js';
+const PROFILE_GAME_IDS=new Set(GAMES.map(g=>g.id));
+export let storageAvailable=true;
+export const storage={get(key){try{return JSON.parse(localStorage.getItem(key));}catch{return null;}},set(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{storageAvailable=false;}},remove(key){try{localStorage.removeItem(key);}catch{storageAvailable=false;}}};
+export function defaultProfile(){return{favorites:[],recent:[],records:{},settings:{sound:false}};}
+export function readProfile(){const saved=storage.get('solo:profile:v1');const base=defaultProfile();if(!saved||typeof saved!=='object')return base;for(const key of['favorites','recent'])if(Array.isArray(saved[key]))base[key]=[...new Set(saved[key].filter(id=>PROFILE_GAME_IDS.has(id)))];if(saved.records&&typeof saved.records==='object')for(const id of PROFILE_GAME_IDS){const v=saved.records[id];if(v&&typeof v==='object')base.records[id]={best:Number.isFinite(v.best)?Math.max(0,v.best):0,plays:Number.isInteger(v.plays)?Math.max(0,v.plays):0,wins:Number.isInteger(v.wins)?Math.max(0,v.wins):0,lastPlayed:Number.isFinite(v.lastPlayed)?v.lastPlayed:0};}base.settings.sound=Boolean(saved.settings?.sound);return base;}

@@ -15,7 +15,7 @@
     { "src": "./assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "玩一局 2048", "url": "./#play=twenty48", "icons": [{ "src": "./assets/icon-192.png", "sizes": "192x192" }] },
-    { "name": "星轨穿梭", "url": "./#play=orbit" }
+    { "name": "打砖块 · 100 关冒险", "url": "./play/breakout/", "icons": [{ "src": "./assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "玩一局 2048", "url": "./play/twenty48/" }
   ]
 }

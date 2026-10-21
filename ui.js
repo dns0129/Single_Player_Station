@@ -1,0 +1,27 @@
+const ICONS={
+  gamepad:'<path d="M6 8h12a3 3 0 0 1 3 2l1 7a2 2 0 0 1-3 2l-3-3H8l-3 3a2 2 0 0 1-3-2l1-7a3 3 0 0 1 3-2Z"/><path d="M6 11v5m-2.5-2.5h5M15 12h.01M18 14h.01"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  'arrow-up-right':'<path d="M6 18 18 6M6 6h12v12"/>',
+  'arrow-right':'<path d="M4 12h16m-6-6 6 6-6 6"/>',
+  'arrow-down':'<path d="M12 4v16m-6-6 6 6 6-6"/>',
+  download:'<path d="M12 3v12m-5-5 5 5 5-5M4 15v5h16v-5"/>',
+  shuffle:'<path d="M3 6h3c5 0 7 12 12 12h3m-4-4 4 4-4 4M3 18h3c2 0 3-2 4-4m4-4c1-2 2-4 4-4h3m-4-4 4 4-4 4"/>',
+  'wifi-off':'<path d="m3 3 18 18M8.5 8.5A12 12 0 0 1 22 10M2 10a13 13 0 0 1 3-2m0 6a9 9 0 0 1 9-2m-6 5a5 5 0 0 1 5-1M12 20h.01"/>',
+  devices:'<rect x="2" y="4" width="14" height="11" rx="1.5"/><path d="M6 20h6M9 15v5"/><rect x="16" y="9" width="6" height="12" rx="1.5"/>',
+  shield:'<path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6Z"/><path d="m8 12 3 3 5-6"/>',
+  sparkles:'<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5ZM20 2v4m-2-2h4M3 18v4m-2-2h4"/>',
+  search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+  sort:'<path d="M4 6h16M4 12h11M4 18h6m10-7v9m-3-3 3 3 3-3"/>',
+  play:'<path d="m8 4 12 8-12 8Z"/>',
+  close:'<path d="m6 6 12 12M6 18 18 6"/>',
+  pause:'<path d="M8 5v14M16 5v14"/>',
+  restart:'<path d="M3 11a9 9 0 1 1 2 7M3 4v7h7"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/>',
+  'volume-x':'<path d="m11 4-6 4H2v8h3l6 4ZM16 9l5 6m-5 0 5-6"/>',
+  'volume-2':'<path d="m11 4-6 4H2v8h3l6 4ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
+  trophy:'<path d="M7 3h10v5c0 5-2 7-5 7S7 13 7 8ZM7 5H3v3c0 3 2 4 5 4m9-7h4v3c0 3-2 4-5 4m-4 3v6m-4 0h8"/>',
+};
+export const icon=(name)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||ICONS.gamepad}</svg>`;
+export function hydrate(root=document){root.querySelectorAll('[data-icon]').forEach(el=>{el.innerHTML=icon(el.dataset.icon);});}
