@@ -1,6 +1,26 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {BreakoutEngine,BREAKOUT_LEVELS,BREAKOUT_WORLDS,BREAKOUT_POWERUPS,createBreakoutLevel,readBreakoutProgress,completeBreakoutLevel} from '../breakout-core.js';
+const originalBrickCounts=JSON.parse(readFileSync(new URL('./fixtures/breakout-original-counts.json',import.meta.url),'utf8'));
+test('every formation has at least triple its released brick count, balanced by difficulty and supply',()=>{
+  for(const level of BREAKOUT_LEVELS){const original=originalBrickCounts[level.number-1];assert.equal(level.baseBrickCount,original);assert.ok(level.bricks.length>=original*3);assert.ok(level.bricks.length<=Math.ceil(original*3.6));assert.ok(level.difficulty>=1&&level.difficulty<=5);assert.ok(level.skillCount>=7&&level.skillCount<=13);assert.equal(level.skillPlan.length,level.skillCount);}
+  assert.equal(BREAKOUT_LEVELS[0].bricks.length,108);
+  assert.ok(BREAKOUT_LEVELS[2].bricks.length/BREAKOUT_LEVELS[2].baseBrickCount>BREAKOUT_LEVELS[0].bricks.length/BREAKOUT_LEVELS[0].baseBrickCount);
+  assert.ok(BREAKOUT_LEVELS[80].bricks.length/BREAKOUT_LEVELS[80].baseBrickCount>BREAKOUT_LEVELS[0].bricks.length/BREAKOUT_LEVELS[0].baseBrickCount);
+});
+test('small square bricks and walls share the reduced ball diameter without overlapping',()=>{
+  for(const level of BREAKOUT_LEVELS){const engine=new BreakoutEngine(level.number),diameter=engine.balls[0].r*2;assert.ok(engine.balls[0].r<7);for(const b of [...level.bricks,...level.walls]){assert.equal(b.w,b.h);assert.equal(b.w,diameter);}assert.ok(level.walls.length>=3);for(const wall of level.walls){assert.ok(wall.x>=0&&wall.x+wall.w<=600&&wall.y+wall.h<500);assert.ok(level.bricks.every(b=>b.x+b.w<=wall.x||b.x>=wall.x+wall.w||b.y+b.h<=wall.y||b.y>=wall.y+wall.h));}}
+});
+test('walls reflect piercing and explosive balls and survive direct hits and detonation',()=>{
+  const e=new BreakoutEngine(1),wall=e.walls[0];e.bricks=[{id:'far',x:10,y:100,w:12,h:12,hp:1,maxHp:1,kind:'normal'}];
+  e.launch();e.effects.pierce=10;e.effects.blast=10;e.balls=[e.newBall(wall.x+wall.w/2,wall.y+wall.h+7,-Math.PI/2)];e.step(.04);
+  assert.ok(e.balls[0].vy>0);assert.equal(e.damageBrick(wall,999),false);e.explode(wall.x,wall.y,100,999);e.charges=1;e.detonate();assert.equal(wall.hp,Infinity);assert.equal(e.score,0);assert.equal(e.walls.length,e.level.walls.length);assert.equal(e.mode,'running');
+  e.bricks[0].hp=0;assert.equal(e.checkWin(),true);assert.ok(e.walls.every(w=>w.hp===Infinity));
+});
+test('each level distributes its advertised skill budget at spaced destruction milestones',()=>{
+  for(const level of BREAKOUT_LEVELS){const e=new BreakoutEngine(level.number);assert.equal(level.dropThresholds[0],1);assert.ok(level.dropThresholds.every((n,i)=>i===0||n>level.dropThresholds[i-1]));assert.ok(level.dropThresholds.at(-1)<=Math.ceil(level.bricks.length*.83));for(const b of e.bricks)e.damageBrick(b,3);const drops=e.takeEvents().filter(event=>event.type==='drop');assert.equal(drops.length,level.skillCount);assert.deepEqual(drops.map(event=>event.drop.kind),level.skillPlan);assert.equal(e.destroyed,level.bricks.length);}
+});
 test('campaign has 100 distinct bounded formations across ten chapters',()=>{assert.equal(BREAKOUT_LEVELS.length,100);assert.equal(BREAKOUT_WORLDS.length,10);const signatures=new Set();for(const level of BREAKOUT_LEVELS){assert.ok(level.bricks.length>=10);assert.equal(new Set(level.bricks.map(b=>b.id)).size,level.bricks.length);assert.ok(level.bricks.every(b=>b.x>=0&&b.x+b.w<=600&&b.y>=50&&b.y+b.h<420&&b.hp>=1&&b.hp<=3));signatures.add(level.bricks.map(b=>`${b.x},${b.y},${b.hp},${b.kind}`).join('|'));}assert.equal(signatures.size,100);assert.throws(()=>createBreakoutLevel(0),RangeError);assert.throws(()=>createBreakoutLevel(101),RangeError);});
 test('launch, wall and paddle collisions keep balls in play at bounded angles',()=>{const e=new BreakoutEngine(1,()=>.99);assert.equal(e.mode,'ready');assert.equal(e.launch(),true);assert.equal(e.launch(),false);e.balls=[e.newBall(8,500,Math.PI)];e.step(.04);assert.ok(e.balls[0].vx>0);e.balls=[e.newBall(e.paddle.x+30,e.paddle.y-8,Math.PI/2)];e.step(.02);assert.ok(e.balls[0].vy<0);assert.ok(e.balls[0].vx>0);e.setPaddle(-100);assert.ok(e.paddle.x>=e.paddle.width/2);e.setPaddle(1000);assert.ok(e.paddle.x<=600-e.paddle.width/2);});
 test('fast balls damage armor once per contact without passing through',()=>{const e=new BreakoutEngine(100,()=>.99),brick=e.bricks.find(b=>b.hp===3);e.bricks=[{...brick}];e.launch();const target=e.bricks[0];e.balls=[e.newBall(target.x+target.w/2,target.y+target.h+8,-Math.PI/2)];e.step(.04);assert.equal(target.hp,2);assert.ok(e.balls[0].vy>0);});

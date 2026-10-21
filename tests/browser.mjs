@@ -31,6 +31,8 @@ try{
     await open('breakout');
     await page.locator('#breakout-map-button').click();
     assert.equal(await page.locator('[data-breakout-level]').count(),100);
+    assert.match(await page.locator('[data-breakout-level="1"] .level-meta').textContent(),/108 块砖/);
+    assert.match(await page.locator('[data-breakout-level="1"] .level-meta').textContent(),/7 件道具/);
     await page.locator('[data-breakout-level="3"]').click();
     assert.match(await page.locator('#breakout-level-name').textContent(),/03 \/ 100/);
     await page.locator('#breakout-launch').click();
@@ -46,6 +48,8 @@ try{
     assert.match(await page.locator('#breakout-level-name').textContent(),/03 \/ 100/);
     await page.locator('#breakout-map-button').click();await page.locator('[data-breakout-level="100"]').click();
     assert.match(await page.locator('#breakout-level-name').textContent(),/100 \/ 100/);
+    assert.match(await page.locator('#breakout-balance').textContent(),/难度 5\/5/);
+    assert.match(await page.locator('#breakout-balance').textContent(),/174/);
     assert.match(await page.locator('#game-status').textContent(),/第 100 关/);
     await page.locator('#restart-game').click();assert.match(await page.locator('#breakout-level-name').textContent(),/100 \/ 100/);
     await close();

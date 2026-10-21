@@ -33,10 +33,25 @@ const BK_PATTERN_TESTS = [
   (x,y,c,r,w)=>Math.abs(x-4.5)<=y*.9+w%2&&Math.abs(x-4.5)>=Math.max(0,y*.9-2.3),
   (x,y,c,r,w)=>{const d=((x-4.5)/4.7)**2+((y-(r-1)/2)/(r/2))**2;return d<1.12&&d>.22+w*.015;},
 ];
+export const BREAKOUT_BRICK_SIZE=12;
+export const BREAKOUT_BALL_RADIUS=BREAKOUT_BRICK_SIZE/2;
+const BK_POWER_KINDS=Object.keys(BREAKOUT_POWERUPS);
+function breakoutLoadout(number,difficulty,formation){
+  const count=6+difficulty+formation%3,attack=['multi','blast','pierce'],support=['wide','slow','shield','life','double'];
+  return Array.from({length:count},(_,i)=>i===0?BK_POWER_KINDS[(number-1)%BK_POWER_KINDS.length]:i%3===0?support[(i+number)%support.length]:attack[(i+formation+difficulty)%attack.length]);
+}
+function breakoutWalls(number,difficulty){
+  const sections=1+Math.floor((difficulty-1)/2),centers=sections===1?[300]:sections===2?[165,435]:[105,300,495],walls=[];
+  for(let section=0;section<sections;section++){
+    const length=3+(number+section)%3+(difficulty>=4?1:0),width=length*BREAKOUT_BRICK_SIZE+(length-1)*2;
+    for(let i=0;i<length;i++)walls.push({id:`wall:${section}:${i}`,kind:'wall',unbreakable:true,x:centers[section]-width/2+i*(BREAKOUT_BRICK_SIZE+2),y:426+(number+section)%3*16,w:BREAKOUT_BRICK_SIZE,h:BREAKOUT_BRICK_SIZE,hp:Infinity,maxHp:Infinity});
+  }
+  return walls;
+}
 export function createBreakoutLevel(number){
   if(!Number.isInteger(number)||number<1||number>100)throw new RangeError('关卡必须在 1–100 之间');
   const world=Math.floor((number-1)/10),formation=(number-1)%10,rows=5+Math.floor(world/2),cols=10;
-  const bricks=[];const bw=51,bh=22,gap=5,x0=(600-cols*bw-(cols-1)*gap)/2;
+  const baseBricks=[];
   for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
     const x=world%2?cols-1-col:col;
     if(!BK_PATTERN_TESTS[formation](x,row,cols,rows,world))continue;
@@ -44,9 +59,27 @@ export function createBreakoutLevel(number){
     if(row>0&&(col*11+row*7+number*3)%23===0)continue;
     const explosive=number>=21&&(col*5+row*3+number)%13===0;
     const hp=explosive?1:number>=61&&(col+row+number)%5===0?3:number>=11&&(col*2+row+world)%4===0?2:1;
-    bricks.push({id:`${row}:${col}`,x:x0+col*(bw+gap),y:94+row*(bh+gap),w:bw,h:bh,hp,maxHp:hp,kind:explosive?'explosive':hp>1?'armor':'normal',row,col});
+    baseBricks.push({hp,maxHp:hp,kind:explosive?'explosive':hp>1?'armor':'normal',row,col});
   }
-  return{number,world:world+1,chapter:BREAKOUT_WORLDS[world],name:`${BREAKOUT_WORLDS[world].name} · ${BK_FORMATIONS[formation]}`,formation:BK_FORMATIONS[formation],speed:265+(number-1)*1.35,bricks};
+  const difficulty=1+Math.floor((number-1)/20),skillPlan=breakoutLoadout(number,difficulty,formation),skillCount=skillPlan.length;
+  // Start at triple the released formations; harder, better supplied levels get more targets.
+  const brickMultiplier=3+.08*(difficulty-1)+.04*(skillCount-7),targetCount=Math.round(baseBricks.length*brickMultiplier);
+  const extraCount=targetCount-baseBricks.length*3;
+  const ranked=baseBricks.map((b,i)=>({i,rank:((i+1)*2654435761+number*2246822519)>>>0})).sort((a,b)=>a.rank-b.rank);
+  const extraParents=new Set(ranked.slice(0,extraCount).map(b=>b.i)),bricks=[];
+  const pitch=16,microCols=cols*3,x0=(600-(microCols-1)*pitch-BREAKOUT_BRICK_SIZE)/2;
+  baseBricks.forEach((parent,index)=>{
+    // Three or four square targets in a six-cell footprint preserve each formation's outline.
+    const offset=(number+parent.row+parent.col)%6,slots=[offset,(offset+2)%6,(offset+4)%6];
+    if(extraParents.has(index))slots.push((offset+1)%6);
+    slots.forEach((slot,i)=>{
+      const row=parent.row*2+Math.floor(slot/3),col=parent.col*3+slot%3;
+      const kind=parent.kind==='explosive'?(i===0?'explosive':'normal'):parent.kind;
+      bricks.push({id:`${row}:${col}`,x:x0+col*pitch,y:94+row*pitch,w:BREAKOUT_BRICK_SIZE,h:BREAKOUT_BRICK_SIZE,hp:parent.hp,maxHp:parent.maxHp,kind,row,col});
+    });
+  });
+  const dropThresholds=skillPlan.map((_,i)=>1+Math.round(i*(bricks.length*.82-1)/(skillCount-1)));
+  return{number,world:world+1,chapter:BREAKOUT_WORLDS[world],name:`${BREAKOUT_WORLDS[world].name} · ${BK_FORMATIONS[formation]}`,formation:BK_FORMATIONS[formation],speed:265+(number-1)*1.35,baseBrickCount:baseBricks.length,difficulty,brickMultiplier,skillCount,skillPlan,dropThresholds,bricks,walls:breakoutWalls(number,difficulty)};
 }
 export const BREAKOUT_LEVELS=Array.from({length:100},(_,i)=>createBreakoutLevel(i+1));
 export function readBreakoutProgress(value){
@@ -65,18 +98,18 @@ export function completeBreakoutLevel(progress,number,score,lives){
 }
 export class BreakoutEngine {
   constructor(number=1,rng=Math.random){this.rng=rng;this.width=600;this.height=700;this.reset(number);}
-  reset(number){this.level=createBreakoutLevel(number);this.bricks=this.level.bricks.map(b=>({...b}));this.score=0;this.lives=3;this.shields=0;this.charges=0;this.paddle={x:300,y:646,width:100};this.balls=[this.newBall(300,635,Math.PI*-.35)];this.drops=[];this.effects={};this.events=[];this.mode='ready';this.time=0;this.dropped=0;this.dropId=0;this.lastHit=0;}
-  newBall(x,y,angle=-Math.PI/2){return{x,y,vx:Math.cos(angle)*this.level.speed,vy:Math.sin(angle)*this.level.speed,r:7,contacts:new Map()};}
+  reset(number){this.level=createBreakoutLevel(number);this.bricks=this.level.bricks.map(b=>({...b}));this.walls=this.level.walls.map(w=>({...w}));this.score=0;this.lives=3;this.shields=0;this.charges=0;this.paddle={x:300,y:646,width:100};this.balls=[this.newBall(300,646-BREAKOUT_BALL_RADIUS-1,Math.PI*-.35)];this.drops=[];this.effects={};this.events=[];this.mode='ready';this.time=0;this.dropped=0;this.destroyed=0;this.dropId=0;this.lastHit=0;}
+  newBall(x,y,angle=-Math.PI/2){return{x,y,vx:Math.cos(angle)*this.level.speed,vy:Math.sin(angle)*this.level.speed,r:BREAKOUT_BALL_RADIUS,contacts:new Map()};}
   emit(type,data={}){this.events.push({type,...data});}
   takeEvents(){const events=this.events;this.events=[];return events;}
   launch(){if(this.mode!=='ready')return false;this.mode='running';const b=this.balls[0];b.x=this.paddle.x;b.y=this.paddle.y-b.r-1;b.vx=this.level.speed*.38;b.vy=-this.level.speed*Math.sqrt(1-.38**2);this.emit('launch');return true;}
   setPaddle(x){this.paddle.x=Math.max(this.paddle.width/2+4,Math.min(596-this.paddle.width/2,x));if(this.mode==='ready'){this.balls[0].x=this.paddle.x;this.balls[0].y=this.paddle.y-this.balls[0].r-1;}}
   award(points){const awarded=points*(this.effects.double>0?2:1);this.score+=awarded;this.emit('score',{score:this.score});}
   damageBrick(brick,damage=1,allowChain=true){
-    if(brick.hp<=0)return false;brick.hp-=damage;this.emit('hit',{x:brick.x+brick.w/2,y:brick.y+brick.h/2,color:brick.kind==='explosive'?'#f3a77c':this.level.chapter.color});
+    if(brick.unbreakable||brick.kind==='wall'||brick.hp<=0)return false;brick.hp-=damage;this.emit('hit',{x:brick.x+brick.w/2,y:brick.y+brick.h/2,color:brick.kind==='explosive'?'#f3a77c':this.level.chapter.color});
     if(brick.hp>0)return false;brick.hp=0;this.award(30*brick.maxHp);this.lastHit=this.time;
-    const guaranteed=this.dropped===0;const chance=this.rng()<.22;
-    if(guaranteed||chance){const kinds=Object.keys(BREAKOUT_POWERUPS),kind=guaranteed?kinds[(this.level.number-1)%kinds.length]:kinds[Math.floor(this.rng()*kinds.length)];this.spawnDrop(kind,brick.x+brick.w/2,brick.y+brick.h/2);this.dropped++;}
+    this.destroyed++;
+    if(this.dropped<this.level.skillCount&&this.destroyed>=this.level.dropThresholds[this.dropped]){this.spawnDrop(this.level.skillPlan[this.dropped],brick.x+brick.w/2,brick.y+brick.h/2);this.dropped++;}
     if(brick.kind==='explosive'&&allowChain)this.explode(brick.x+brick.w/2,brick.y+brick.h/2,92,1,new Set([brick.id]));
     return true;
   }
@@ -98,6 +131,12 @@ export class BreakoutEngine {
   }
   detonate(){if(this.mode!=='running'||this.charges<=0)return false;this.charges--;for(const ball of this.balls)this.explode(ball.x,ball.y,115,2);this.checkWin();return true;}
   checkWin(){if(this.mode==='won'||this.mode==='lost'||this.bricks.some(b=>b.hp>0))return false;this.mode='won';this.award(this.lives*100);this.emit('win',{score:this.score,lives:this.lives,number:this.level.number});return true;}
+  reflectFromSolid(ball,solid,oldX,oldY){
+    if(oldY+ball.r<=solid.y){ball.y=solid.y-ball.r;ball.vy=-Math.abs(ball.vy);}
+    else if(oldY-ball.r>=solid.y+solid.h){ball.y=solid.y+solid.h+ball.r;ball.vy=Math.abs(ball.vy);}
+    else if(oldX<solid.x){ball.x=solid.x-ball.r;ball.vx=-Math.abs(ball.vx);}
+    else{ball.x=solid.x+solid.w+ball.r;ball.vx=Math.abs(ball.vx);}
+  }
   step(dt){
     if(this.mode!=='running')return;dt=Math.max(0,Math.min(.04,dt));this.time+=dt;
     for(const key of Object.keys(this.effects)){this.effects[key]=Math.max(0,this.effects[key]-dt);if(this.effects[key]===0)delete this.effects[key];}
@@ -113,11 +152,12 @@ export class BreakoutEngine {
           const offset=Math.max(-1,Math.min(1,(ball.x-this.paddle.x)/(this.paddle.width/2))),angle=offset*1.12,speed=this.level.speed;ball.y=this.paddle.y-ball.r;ball.vx=Math.sin(angle)*speed;ball.vy=-Math.cos(angle)*speed;this.emit('bounce',{x:ball.x,y:ball.y});
         }
         if(ball.vy>0&&this.shields>0&&ball.y+ball.r>=681){ball.y=681-ball.r;ball.vy=-Math.abs(ball.vy);this.shields--;this.emit('shield',{x:ball.x,y:681});}
+        for(const wall of this.walls){if(ball.x+ball.r<=wall.x||ball.x-ball.r>=wall.x+wall.w||ball.y+ball.r<=wall.y||ball.y-ball.r>=wall.y+wall.h)continue;this.reflectFromSolid(ball,wall,oldX,oldY);this.emit('wall',{x:ball.x,y:ball.y});break;}
         for(const brick of this.bricks){
           if(brick.hp<=0||ball.x+ball.r<brick.x||ball.x-ball.r>brick.x+brick.w||ball.y+ball.r<brick.y||ball.y-ball.r>brick.y+brick.h)continue;
           if((ball.contacts.get(brick.id)||-10)>this.time-.1)continue;ball.contacts.set(brick.id,this.time);
           this.damageBrick(brick);if(this.effects.blast)this.explode(ball.x,ball.y,91,1,new Set([brick.id]));
-          if(!this.effects.pierce){if(oldY+ball.r<=brick.y){ball.y=brick.y-ball.r;ball.vy=-Math.abs(ball.vy);}else if(oldY-ball.r>=brick.y+brick.h){ball.y=brick.y+brick.h+ball.r;ball.vy=Math.abs(ball.vy);}else if(oldX<brick.x){ball.x=brick.x-ball.r;ball.vx=-Math.abs(ball.vx);}else{ball.x=brick.x+brick.w+ball.r;ball.vx=Math.abs(ball.vx);}break;}
+          if(!this.effects.pierce){this.reflectFromSolid(ball,brick,oldX,oldY);break;}
         }
       }
       // Avoid an almost horizontal ball taking minutes to reach the next row.
