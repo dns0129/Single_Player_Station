@@ -1,4 +1,4 @@
-const CACHE='solo-arcade-f40eb31fa1be';
+const CACHE='solo-arcade-e0fcb65743ec';
 const BASE=new URL('./',self.location.href);
 const ASSETS=['./','./index.html','./styles.css','./core.js','./games.js','./app.js','./manifest.webmanifest','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png','./assets/hero.svg',...['twenty48','snake','blocks','mines','sudoku','gomoku','breakout','memory','slide','orbit'].map(id=>`./assets/${id}.svg`)];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(p=>new URL(p,BASE).href))).then(()=>self.skipWaiting()));});
