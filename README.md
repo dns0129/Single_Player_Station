@@ -24,9 +24,11 @@ npm run build
 
 仓库根目录即可作为静态网站发布，所有资源使用相对路径，支持 `/Single_Player_Station/` 子路径。
 
-1. 在仓库 **Settings → Pages** 中，将 **Source** 设为 **Deploy from a branch**。
-2. 选择 **main** 分支和 **/ (root)**，点击 **Save**。
-3. 等待 GitHub Pages 完成部署，使用设置页显示的正式网址访问。
+项目包含 `Publish game station` 自动发布工作流。每次推送到 `main`，会检查游戏规则、生成离线包并发布到 GitHub Pages。
+
+1. 在仓库 **Settings → Pages** 中，确认 **Source** 设为 **GitHub Actions**。
+2. 在 **Actions → Publish game station** 查看部署结果；必要时可点击 **Run workflow** 手动发布。
+3. 等待部署成功，使用工作流或 Pages 设置页显示的正式网址访问。
 
 预期地址为 `https://dns0129.github.io/Single_Player_Station/`，以 GitHub Pages 返回的实际部署状态为准。仅将文件推送到 GitHub 不代表 Pages 已启用。
 
